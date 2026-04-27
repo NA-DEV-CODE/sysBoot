@@ -2,6 +2,13 @@
 [ORG 0x7C00]
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
+KERNEL_ADDRESS  equ 0x00010000
+STACK_ADDRESS   equ 0x200000
+LBA_START       equ 1
+AMOUNT_OF_SECTORS    equ 100
+BOOT_SIGNATURE      equ 0xAA55
+BOOT_SECTOR_SIZE    equ 510
+
 start:
     jmp 0x0000:stage2
 	
@@ -86,12 +93,12 @@ load32:
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov esp, 0x200000
-    mov eax, 1
-    mov ecx, 100
-    mov edi, 0x00010000
+    mov esp, STACK_ADDRESS
+    mov eax, LBA_START
+    mov ecx, AMOUNT_OF_SECTORS
+    mov edi, KERNEL_ADDRESS
     call ata_lba_read 
-    jmp CODE_SEG:0x00010000 ; a kernel in this address is needed for this to work
+    jmp CODE_SEG:KERNEL_ADDRESS ; a kernel in this address is needed for this to work
 	
 ata_lba_read:
     mov ebx, eax
@@ -132,5 +139,5 @@ ata_lba_read:
     loop .next_sector
     ret
 	
-times 510 - ($ - $$) db 0
-dw 0xAA55
+times BOOT_SECTOR_SIZE - ($ - $$) db 0
+dw BOOT_SIGNATURE
